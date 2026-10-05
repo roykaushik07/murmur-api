@@ -1,0 +1,205 @@
+{
+  "system": "murmur",
+  "pickOrder": [
+    "roykaushik07/murmur-web",
+    "roykaushik07/murmur-api",
+    "roykaushik07/murmur-transcriber",
+    "roykaushik07/murmur-clipper"
+  ],
+  "links": [
+    {
+      "tier": "T1",
+      "key": "host:roykaushik07/murmur-web->roykaushik07/murmur-api:api.murmurclips.app",
+      "evidence": [
+        {
+          "repo": "roykaushik07/murmur-web",
+          "path": ".env.example",
+          "line": 2
+        },
+        {
+          "repo": "roykaushik07/murmur-api",
+          "path": "infra/dns.tf",
+          "line": 1
+        },
+        {
+          "repo": "roykaushik07/murmur-api",
+          "path": "fly.toml",
+          "line": 1
+        }
+      ],
+      "note": "Web calls the API host; DNS CNAME to the Fly app."
+    },
+    {
+      "tier": "T1",
+      "key": "host:roykaushik07/murmur-api->roykaushik07/murmur-transcriber:murmur-transcriber.onrender.com",
+      "evidence": [
+        {
+          "repo": "roykaushik07/murmur-api",
+          "path": "fly.toml",
+          "line": 10
+        },
+        {
+          "repo": "roykaushik07/murmur-transcriber",
+          "path": "render.yaml",
+          "line": 3
+        }
+      ],
+      "note": "API calls the transcriber on Render."
+    },
+    {
+      "tier": "T1",
+      "key": "host:roykaushik07/murmur-transcriber->roykaushik07/murmur-api:api.murmurclips.app",
+      "evidence": [
+        {
+          "repo": "roykaushik07/murmur-transcriber",
+          "path": ".env.example",
+          "line": 1
+        },
+        {
+          "repo": "roykaushik07/murmur-api",
+          "path": "infra/dns.tf",
+          "line": 1
+        },
+        {
+          "repo": "roykaushik07/murmur-api",
+          "path": "fly.toml",
+          "line": 1
+        }
+      ],
+      "note": "Transcriber calls back to the API host."
+    },
+    {
+      "tier": "T1",
+      "key": "host:roykaushik07/murmur-clipper->roykaushik07/murmur-api:api.murmurclips.app",
+      "evidence": [
+        {
+          "repo": "roykaushik07/murmur-clipper",
+          "path": "fly.toml",
+          "line": 5
+        },
+        {
+          "repo": "roykaushik07/murmur-api",
+          "path": "infra/dns.tf",
+          "line": 1
+        },
+        {
+          "repo": "roykaushik07/murmur-api",
+          "path": "fly.toml",
+          "line": 1
+        }
+      ],
+      "note": "Clipper calls back to the API host."
+    },
+    {
+      "tier": "T2",
+      "key": "database:roykaushik07/murmur-api->roykaushik07/murmur-web:supabase:qzmvhtrplkwexadnbcfo",
+      "evidence": [
+        {
+          "repo": "roykaushik07/murmur-api",
+          "path": ".env.example",
+          "line": 1
+        },
+        {
+          "repo": "roykaushik07/murmur-web",
+          "path": ".env.example",
+          "line": 3
+        }
+      ],
+      "note": "Shared Supabase project; web is first in pick order."
+    },
+    {
+      "tier": "T2",
+      "key": "database:roykaushik07/murmur-transcriber->roykaushik07/murmur-web:supabase:qzmvhtrplkwexadnbcfo",
+      "evidence": [
+        {
+          "repo": "roykaushik07/murmur-transcriber",
+          "path": ".env.example",
+          "line": 2
+        },
+        {
+          "repo": "roykaushik07/murmur-web",
+          "path": ".env.example",
+          "line": 3
+        }
+      ],
+      "note": "Shared Supabase project; web is first in pick order."
+    },
+    {
+      "tier": "T3",
+      "key": "host:roykaushik07/murmur-api->roykaushik07/murmur-clipper:murmur-clipper.fly.dev",
+      "evidence": [
+        {
+          "repo": "roykaushik07/murmur-api",
+          "path": "src/lib/clipper.ts",
+          "line": 14
+        },
+        {
+          "repo": "roykaushik07/murmur-clipper",
+          "path": "fly.toml",
+          "line": 1
+        }
+      ],
+      "note": "URL lives only in a deploy-time secret (CLIPPER_URL set via fly secrets; empty in .env.example)."
+    },
+    {
+      "tier": "T3",
+      "key": "host:roykaushik07/murmur-transcriber->roykaushik07/murmur-clipper:murmur-clipper.fly.dev",
+      "evidence": [
+        {
+          "repo": "roykaushik07/murmur-transcriber",
+          "path": "app/clipper_client.py",
+          "line": 7
+        },
+        {
+          "repo": "roykaushik07/murmur-clipper",
+          "path": "fly.toml",
+          "line": 1
+        }
+      ],
+      "note": "Python source is never selected, so the default URL in clipper_client.py is not seen."
+    },
+    {
+      "tier": "T3",
+      "key": "host:roykaushik07/murmur-web->roykaushik07/murmur-clipper:clips.murmurclips.app",
+      "evidence": [
+        {
+          "repo": "roykaushik07/murmur-web",
+          "path": ".env.example",
+          "line": 5
+        },
+        {
+          "repo": "roykaushik07/murmur-clipper",
+          "path": "edge/wrangler.toml",
+          "line": 4
+        }
+      ],
+      "note": "Worker routes aren't an exposes source; DNS record (murmur-api infra/dns.tf:11) is AAAA 100::."
+    }
+  ],
+  "unresolved": [
+    {
+      "repo": "roykaushik07/murmur-web",
+      "kind": "host",
+      "value": "clips.murmurclips.app",
+      "note": "Clips CDN host; only exposed via a Worker route and a proxied AAAA 100:: record."
+    },
+    {
+      "repo": "roykaushik07/murmur-web",
+      "kind": "host",
+      "value": "8f3c2a1b9d7e4f60a5b1c2d3e4f5a6b7.r2.cloudflarestorage.com",
+      "note": "R2 storage endpoint, not served by any repo."
+    },
+    {
+      "repo": "roykaushik07/murmur-api",
+      "kind": "host",
+      "value": "o4507123.ingest.de.sentry.io",
+      "note": "Third-party Sentry ingest."
+    },
+    {
+      "repo": "roykaushik07/murmur-transcriber",
+      "kind": "queue",
+      "value": "transcribe_jobs",
+      "note": "Redis queue with no producer/consumer match in another repo."
+    }
+  ]
+}
