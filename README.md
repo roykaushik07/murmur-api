@@ -25,3 +25,15 @@ npm run dev
 
 `.github/workflows/deploy.yml` builds the image, pushes it to GHCR and runs `flyctl deploy`.
 DNS for the public hostname is managed with Terraform in `infra/`.
+
+## Secrets
+
+Runtime secrets that are not baked into `fly.toml` are set on Fly, for example the clipper's
+address:
+
+```sh
+fly secrets set CLIPPER_URL=<clipper-url> CLIPPER_WEBHOOK_TOKEN=<token>
+```
+
+The same token must be set as `MURMUR_WEBHOOK_TOKEN` on murmur-clipper so it can call
+`/webhooks/clipper`.

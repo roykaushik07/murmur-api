@@ -1,23 +1,15 @@
 import { config } from "./config.js";
+import { presignAudioUrl } from "./storage.js";
 
-export type TranscriptionRequest = {
-  episodeId: string;
-  sourceKey: string;
-  callbackPath: string;
-};
-
-/** Asks murmur-transcriber to start a job. The transcriber answers 202 and reports back via webhook. */
-export async function requestTranscription(job: TranscriptionRequest): Promise<void> {
-  const res = await fetch(`${config.TRANSCRIBER_URL}/v1/transcriptions`, {
+/** Asks murmur-transcriber to start a job. It answers 202 and reports back on /webhooks/transcriber. */
+export async function requestTranscription(episodeId: string, sourceKey: string): Promise<void> {
+  const res = await fetch(`${config.TRANSCRIBER_URL}/v1/jobs`, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-murmur-secret": config.TRANSCRIBER_WEBHOOK_SECRET,
-    },
-    body: JSON.stringify(job),
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ episode_id: episodeId, audio_url: await presignAudioUrl(sourceKey) }),
   });
 
   if (res.status !== 202) {
-    throw new Error(`transcriber rejected job ${job.episodeId}: ${res.status}`);
+    throw new Error(`transcriber rejected job ${episodeId}: ${res.status}`);
   }
 }

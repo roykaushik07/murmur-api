@@ -58,6 +58,7 @@ model Clip {
   style     String     @default("bold")
   status    ClipStatus @default(queued)
   fileKey   String?    @map("file_key")
+  renderId  String?    @unique @map("render_id")
   createdAt DateTime   @default(now()) @map("created_at")
   episode   Episode    @relation(fields: [episodeId], references: [id], onDelete: Cascade)
 

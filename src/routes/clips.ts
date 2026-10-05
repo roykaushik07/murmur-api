@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { requireUser } from "../lib/auth.js";
+import { requestRender } from "../lib/clipper.js";
 import { db } from "../lib/db.js";
 
 const CreateClip = z.object({
@@ -33,7 +34,22 @@ export const clipRoutes: FastifyPluginAsync = async (app) => {
       if (!episode) return reply.notFound();
       if (body.endMs <= body.startMs) return reply.badRequest("endMs must be after startMs");
 
-      const clip = await db.clip.create({ data: { ...body, userId: req.userId } });
+      const segments = await db.segment.findMany({
+        where: { episodeId: episode.id, endMs: { gt: body.startMs }, startMs: { lt: body.endMs } },
+        orderBy: { startMs: "asc" },
+      });
+
+      const renderId = await requestRender({
+        episodeId: episode.id,
+        sourceKey: episode.sourceKey,
+        start: body.startMs / 1000,
+        end: body.endMs / 1000,
+        segments: segments.map((s) => ({ start: s.startMs / 1000, end: s.endMs / 1000, text: s.text })),
+      });
+
+      const clip = await db.clip.create({
+        data: { ...body, userId: req.userId, renderId, status: "rendering" },
+      });
       return reply.code(201).send(clip);
     });
   });

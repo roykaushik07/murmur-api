@@ -30,11 +30,7 @@ export const episodeRoutes: FastifyPluginAsync = async (app) => {
       data: { userId: req.userId, title: body.title, sourceKey: body.sourceKey, status: "transcribing" },
     });
 
-    await requestTranscription({
-      episodeId: episode.id,
-      sourceKey: episode.sourceKey,
-      callbackPath: "/webhooks/transcriber",
-    });
+    await requestTranscription(episode.id, episode.sourceKey);
 
     return reply.code(201).send(episode);
   });
