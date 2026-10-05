@@ -39,18 +39,28 @@ export const clipRoutes: FastifyPluginAsync = async (app) => {
         orderBy: { startMs: "asc" },
       });
 
-      const renderId = await requestRender({
-        episodeId: episode.id,
-        sourceKey: episode.sourceKey,
-        start: body.startMs / 1000,
-        end: body.endMs / 1000,
-        segments: segments.map((s) => ({ start: s.startMs / 1000, end: s.endMs / 1000, text: s.text })),
+      const clip = await db.clip.create({
+        data: { ...body, userId: req.userId, status: "queued" },
       });
 
-      const clip = await db.clip.create({
-        data: { ...body, userId: req.userId, renderId, status: "rendering" },
-      });
-      return reply.code(201).send(clip);
+      try {
+        const renderId = await requestRender({
+          episodeId: episode.id,
+          sourceKey: episode.sourceKey,
+          start: body.startMs / 1000,
+          end: body.endMs / 1000,
+          segments: segments.map((s) => ({ start: s.startMs / 1000, end: s.endMs / 1000, text: s.text })),
+        });
+        const rendering = await db.clip.update({
+          where: { id: clip.id },
+          data: { renderId, status: "rendering" },
+        });
+        return reply.code(201).send(rendering);
+      } catch (err) {
+        req.log.error({ err, clipId: clip.id }, "render request failed");
+        await db.clip.update({ where: { id: clip.id }, data: { status: "failed" } });
+        return reply.code(502).send({ ...clip, status: "failed" });
+      }
     });
   });
 };
