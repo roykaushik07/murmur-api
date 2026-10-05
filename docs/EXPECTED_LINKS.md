@@ -28,7 +28,7 @@ Machine-readable version: `expected-links.json`. Evidence is `repo/path#Lline`.
 |---|---|---|
 | `host:murmur-api->murmur-clipper:murmur-clipper.fly.dev` | URL lives only in a deploy-time secret (CLIPPER_URL via `fly secrets set`; empty in .env.example) | murmur-api/src/lib/clipper.ts#L14, murmur-clipper/fly.toml#L1 |
 | `host:murmur-transcriber->murmur-clipper:murmur-clipper.fly.dev` | Python source is never selected | murmur-transcriber/app/clipper_client.py#L7, murmur-clipper/fly.toml#L1 |
-| `host:murmur-web->murmur-clipper:clips.murmurclips.app` | Worker routes aren't an exposes source; DNS record is AAAA `100::` | murmur-web/.env.example#L5, murmur-clipper/edge/wrangler.toml#L4 |
+| `host:murmur-web->murmur-clipper:clips.murmurclips.app` | Worker routes aren't an exposes source; DNS record (murmur-api/infra/dns.tf#L10-L16, type at L13) is AAAA `100::` | murmur-web/.env.example#L5, murmur-clipper/edge/wrangler.toml#L4 |
 
 ## Unresolved uses (must be reported)
 
@@ -42,3 +42,5 @@ Machine-readable version: `expected-links.json`. Evidence is `repo/path#Lline`.
 - Credentials: `hunter2`, `s3cret`, `sk_test_51Hxxxxxxxxxxxxxxxx` in `.env.example` files (for example murmur-api/.env.example#L2-L4) are fake secrets and must never produce facts.
 - `pro-annual` (murmur-web/app/api/billing/route.ts#L7, #L18) is a billing plan literal, not a queue: must produce no queue fact.
 - `edge/wrangler.toml` `ORIGIN_URL` (murmur-clipper/edge/wrangler.toml#L7) is the clipper's own origin, murmur-clipper.fly.dev: a self-reference, no link.
+- `render.yaml` extra `name:` lines: `name: murmur-transcriber-worker` (murmur-transcriber/render.yaml#L16) and `name: murmur-jobs` (murmur-transcriber/render.yaml#L22) make StackPrism expose `murmur-transcriber-worker.onrender.com` and `murmur-jobs.onrender.com` (every `name:` line counts). Nobody uses them, so no link: a harmless quirk, since a worker and a Redis instance are not HTTP hosts.
+- Clips DNS record: murmur-api/infra/dns.tf#L10-L16 is an AAAA `100::` placeholder for the Worker route. StackPrism skips DNS records whose target has no dot, so no DNS chain to the clipper exists.

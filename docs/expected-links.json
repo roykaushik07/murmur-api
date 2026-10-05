@@ -173,7 +173,7 @@
           "line": 4
         }
       ],
-      "note": "Worker routes aren't an exposes source; DNS record (murmur-api infra/dns.tf:11) is AAAA 100::."
+      "note": "Worker routes aren't an exposes source; DNS record (murmur-api infra/dns.tf:10-16, type at line 13) is AAAA 100::."
     }
   ],
   "unresolved": [
