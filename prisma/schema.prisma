@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum EpisodeStatus {
+  uploaded
+  transcribing
+  ready
+  failed
+}
+
+enum ClipStatus {
+  queued
+  rendering
+  done
+  failed
+}
+
+model Episode {
+  id         String        @id @default(uuid()) @db.Uuid
+  userId     String        @map("user_id") @db.Uuid
+  title      String
+  sourceKey  String        @map("source_key")
+  status     EpisodeStatus @default(uploaded)
+  durationMs Int?          @map("duration_ms")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  segments   Segment[]
+  clips      Clip[]
+
+  @@index([userId])
+  @@map("episodes")
+}
+
+model Segment {
+  id        String  @id @default(uuid()) @db.Uuid
+  episodeId String  @map("episode_id") @db.Uuid
+  startMs   Int     @map("start_ms")
+  endMs     Int     @map("end_ms")
+  text      String
+  episode   Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@index([episodeId])
+  @@map("segments")
+}
+
+model Clip {
+  id        String     @id @default(uuid()) @db.Uuid
+  episodeId String     @map("episode_id") @db.Uuid
+  userId    String     @map("user_id") @db.Uuid
+  startMs   Int        @map("start_ms")
+  endMs     Int        @map("end_ms")
+  style     String     @default("bold")
+  status    ClipStatus @default(queued)
+  fileKey   String?    @map("file_key")
+  createdAt DateTime   @default(now()) @map("created_at")
+  episode   Episode    @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("clips")
+}
+
+model Subscription {
+  userId           String   @id @map("user_id") @db.Uuid
+  stripeCustomerId String   @unique @map("stripe_customer_id")
+  plan             String
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
